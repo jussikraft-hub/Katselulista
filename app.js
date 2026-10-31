@@ -680,6 +680,27 @@ async function downloadFromDropbox() {
   }
 }
 
+// Load default curated list from katselulista.json
+async function loadDefaultListFromJSON() {
+  showToast("Ladataan nimikkeitä...");
+  try {
+    const res = await fetch("katselulista.json");
+    if (!res.ok) throw new Error("Tiedostoa ei löytynyt");
+    const list = await res.json();
+    if (Array.isArray(list) && list.length > 0) {
+      items = list;
+      saveData();
+      closeModals();
+      showToast(`✅ Ladattu ${items.length} nimikettä listalle!`);
+    } else {
+      alert("Tiedosto oli tyhjä.");
+    }
+  } catch (err) {
+    console.error("Latausvirhe:", err);
+    alert("Virhe listan lataamisessa: " + err.message);
+  }
+}
+
 // Export JSON file to local / Files app
 function exportJSONFile() {
   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(items, null, 2));
