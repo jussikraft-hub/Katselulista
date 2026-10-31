@@ -521,17 +521,19 @@ body {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  align-items: center;
 }
 
 @media (min-width: 520px) {
   .detail-layout {
     flex-direction: row;
-    gap: 20px;
+    gap: 24px;
+    align-items: flex-start;
   }
 }
 
 .detail-poster-box {
-  width: 130px;
+  width: 140px;
   flex-shrink: 0;
   aspect-ratio: 2 / 3;
   border-radius: var(--radius-md);
@@ -539,12 +541,27 @@ body {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   margin: 0 auto;
+  align-self: flex-start;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.detail-poster-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 @media (min-width: 520px) {
   .detail-poster-box {
-    width: 160px;
+    width: 200px;
     margin: 0;
+  }
+}
+
+@media (min-width: 768px) {
+  .detail-poster-box {
+    width: 230px;
   }
 }
 
