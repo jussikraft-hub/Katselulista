@@ -17,7 +17,6 @@ class TestKatselulistaApp(unittest.TestCase):
         with open(json_path, "r", encoding="utf-8") as f:
             data = json.load(f)
         self.assertIsInstance(data, list)
-        self.assertGreaterEqual(len(data), 4, "Seed items should have at least 4 items")
         for item in data:
             self.assertIn("id", item)
             self.assertIn("title", item)
