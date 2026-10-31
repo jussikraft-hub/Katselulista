@@ -185,12 +185,50 @@ function openDetailModal(id) {
   if (!item) return;
   activeItem = item;
 
+  // Set to view mode initially
+  toggleDetailEditMode(false);
+
+  // Populate view fields
   document.getElementById("detailTitle").textContent = item.title;
   document.getElementById("detailYearType").textContent = `${item.year || ""} • ${item.type === "series" ? "Sarja" : item.type === "miniseries" ? "Minisarja" : "Elokuva"} • ${item.platform}`;
-  document.getElementById("detailStatusSelect").value = item.status;
-  document.getElementById("detailProgressInput").value = item.progress || "";
-  document.getElementById("detailRatingSelect").value = item.rating || "0";
-  document.getElementById("detailNotesInput").value = item.notes || "";
+  
+  // Status badge
+  const statusBadge = document.getElementById("detailStatusBadge");
+  statusBadge.className = `badge-status ${item.status}`;
+  statusBadge.style.position = "static";
+  statusBadge.style.marginLeft = "6px";
+  if (item.status === "watching") statusBadge.textContent = "Kesken";
+  else if (item.status === "watchlist") statusBadge.textContent = "Listalla";
+  else statusBadge.textContent = "Katsottu";
+
+  // Rating
+  const ratingBox = document.getElementById("detailRatingDisplay");
+  if (item.rating && item.rating > 0) {
+    ratingBox.textContent = "★".repeat(item.rating) + "☆".repeat(5 - item.rating);
+    ratingBox.style.display = "block";
+  } else {
+    ratingBox.textContent = "Ei arviota";
+    ratingBox.style.color = "var(--text-dim)";
+  }
+
+  // Progress & Notes
+  const progBox = document.getElementById("detailProgressBox");
+  if (item.progress) {
+    progBox.textContent = `📍 ${item.progress}`;
+    progBox.style.display = "block";
+  } else {
+    progBox.style.display = "none";
+  }
+
+  const notesBox = document.getElementById("detailNotesBox");
+  if (item.notes) {
+    notesBox.textContent = `📝 ${item.notes}`;
+    notesBox.style.display = "block";
+  } else {
+    notesBox.style.display = "none";
+  }
+
+  // Synopsis, Cast, Creator
   document.getElementById("detailSynopsis").textContent = item.synopsis || "Ei kuvausta.";
   document.getElementById("detailCast").textContent = item.cast || "Ei tekijätietoja.";
   document.getElementById("detailCreator").textContent = item.creator || "-";
@@ -227,26 +265,78 @@ function openDetailModal(id) {
   detailModal.classList.add("active");
 }
 
+// Toggle between View Mode and Edit Mode in Detail Modal
+function toggleDetailEditMode(forceState) {
+  const viewContainer = document.getElementById("detailViewContainer");
+  const editContainer = document.getElementById("detailEditContainer");
+  const titleHeader = document.getElementById("detailSheetTitle");
+  const toggleBtn = document.getElementById("detailToggleEditBtn");
+
+  const toEdit = forceState !== undefined ? forceState : (viewContainer.style.display !== "none");
+
+  if (toEdit && activeItem) {
+    // Switch to Edit Mode
+    viewContainer.style.display = "none";
+    editContainer.style.display = "flex";
+    titleHeader.textContent = "Muokkaa tietoja";
+    toggleBtn.style.display = "none";
+
+    // Populate all editable fields
+    document.getElementById("detailEditTitle").value = activeItem.title || "";
+    document.getElementById("detailEditYear").value = activeItem.year || "";
+    document.getElementById("detailEditType").value = activeItem.type || "movie";
+    document.getElementById("detailEditPlatform").value = activeItem.platform || "Apple TV+";
+    document.getElementById("detailEditStatus").value = activeItem.status || "watchlist";
+    document.getElementById("detailEditRating").value = activeItem.rating || "0";
+    document.getElementById("detailEditProgress").value = activeItem.progress || "";
+    document.getElementById("detailEditPosterUrl").value = activeItem.posterUrl || "";
+    document.getElementById("detailEditGenres").value = (activeItem.genres || []).join(", ");
+    document.getElementById("detailEditCast").value = activeItem.cast || "";
+    document.getElementById("detailEditCreator").value = activeItem.creator || "";
+    document.getElementById("detailEditSynopsis").value = activeItem.synopsis || "";
+    document.getElementById("detailEditNotes").value = activeItem.notes || "";
+    document.getElementById("detailEditLink").value = activeItem.link || "";
+  } else {
+    // Switch to View Mode
+    viewContainer.style.display = "flex";
+    editContainer.style.display = "none";
+    titleHeader.textContent = "Tiedot & Tilanne";
+    toggleBtn.style.display = "inline-flex";
+  }
+}
+
+// Save Full Edits
+function saveFullItemEdits(e) {
+  if (e) e.preventDefault();
+  if (!activeItem) return;
+
+  activeItem.title = document.getElementById("detailEditTitle").value.trim() || activeItem.title;
+  activeItem.year = document.getElementById("detailEditYear").value.trim();
+  activeItem.type = document.getElementById("detailEditType").value;
+  activeItem.platform = document.getElementById("detailEditPlatform").value;
+  activeItem.status = document.getElementById("detailEditStatus").value;
+  activeItem.rating = parseInt(document.getElementById("detailEditRating").value, 10) || 0;
+  activeItem.progress = document.getElementById("detailEditProgress").value.trim();
+  activeItem.posterUrl = document.getElementById("detailEditPosterUrl").value.trim();
+  activeItem.genres = document.getElementById("detailEditGenres").value.split(",").map(g => g.trim()).filter(Boolean);
+  activeItem.cast = document.getElementById("detailEditCast").value.trim();
+  activeItem.creator = document.getElementById("detailEditCreator").value.trim();
+  activeItem.synopsis = document.getElementById("detailEditSynopsis").value.trim();
+  activeItem.notes = document.getElementById("detailEditNotes").value.trim();
+  activeItem.link = document.getElementById("detailEditLink").value.trim();
+  activeItem.updatedAt = new Date().toISOString().split("T")[0];
+
+  saveData();
+  openDetailModal(activeItem.id);
+  showToast("✅ Muutokset tallennettu!");
+}
+
 // Close Modals
 function closeModals() {
   detailModal.classList.remove("active");
   addModal.classList.remove("active");
   syncModal.classList.remove("active");
   activeItem = null;
-}
-
-// Save Detail Edits
-function saveDetailEdits() {
-  if (!activeItem) return;
-  activeItem.status = document.getElementById("detailStatusSelect").value;
-  activeItem.progress = document.getElementById("detailProgressInput").value.trim();
-  activeItem.rating = parseInt(document.getElementById("detailRatingSelect").value, 10) || 0;
-  activeItem.notes = document.getElementById("detailNotesInput").value.trim();
-  activeItem.updatedAt = new Date().toISOString().split("T")[0];
-
-  saveData();
-  closeModals();
-  showToast("Muutokset tallennettu!");
 }
 
 // Delete Active Item
@@ -317,50 +407,132 @@ function setupEventListeners() {
     }
 
     searchTimeout = setTimeout(() => {
-      fetchShowsFromTVMaze(q);
+      searchMoviesAndShows(q);
     }, 350);
   });
 }
 
-// TVMaze Public API Search
-async function fetchShowsFromTVMaze(query) {
+// Combined Search: OMDb (Cinema & Classic/Modern Movies) + TVMaze (Series)
+async function searchMoviesAndShows(query) {
   const autoResultsList = document.getElementById("autoResultsList");
   try {
-    const res = await fetch(`https://api.tvmaze.com/search/shows?q=${encodeURIComponent(query)}`);
-    const data = await res.json();
-    if (!data || data.length === 0) {
+    // 1. Fetch OMDb (all movies and films)
+    const omdbPromise = fetch(`https://www.omdbapi.com/?s=${encodeURIComponent(query)}&apikey=trilogy`)
+      .then(r => r.json())
+      .catch(() => ({ Response: "False" }));
+
+    // 2. Fetch TVMaze (TV series)
+    const tvmazePromise = fetch(`https://api.tvmaze.com/search/shows?q=${encodeURIComponent(query)}`)
+      .then(r => r.json())
+      .catch(() => []);
+
+    const [omdbRes, tvmazeRes] = await Promise.all([omdbPromise, tvmazePromise]);
+
+    const combined = [];
+
+    // Process OMDb results (movies and series)
+    if (omdbRes && omdbRes.Response === "True" && Array.isArray(omdbRes.Search)) {
+      omdbRes.Search.slice(0, 6).forEach(m => {
+        combined.push({
+          source: "omdb",
+          id: m.imdbID,
+          title: m.Title,
+          year: m.Year,
+          type: m.Type === "series" ? "Sarja" : "Elokuva",
+          thumb: m.Poster && m.Poster !== "N/A" ? m.Poster : "",
+          raw: m
+        });
+      });
+    }
+
+    // Process TVMaze results
+    if (Array.isArray(tvmazeRes)) {
+      tvmazeRes.slice(0, 4).forEach(t => {
+        const show = t.show;
+        // Avoid duplicate by title if already from OMDb
+        if (!combined.some(c => c.title.toLowerCase() === show.name.toLowerCase())) {
+          combined.push({
+            source: "tvmaze",
+            id: show.id,
+            title: show.name,
+            year: show.premiered ? show.premiered.substring(0, 4) : "",
+            type: "Sarja",
+            thumb: show.image?.medium || show.image?.original || "",
+            raw: show
+          });
+        }
+      });
+    }
+
+    if (combined.length === 0) {
       autoResultsList.style.display = "none";
       return;
     }
 
     autoResultsList.innerHTML = "";
-    data.slice(0, 5).forEach(item => {
-      const show = item.show;
-      const thumb = show.image?.medium || show.image?.original || "";
-      const year = show.premiered ? show.premiered.substring(0, 4) : "";
+    combined.slice(0, 8).forEach(item => {
       const div = document.createElement("div");
       div.className = "search-result-item";
-      div.onclick = () => selectTVMazeShow(show);
+      div.onclick = () => selectSearchResult(item);
+
+      const typeIcon = item.type === "Elokuva" ? "🎬" : "📺";
 
       div.innerHTML = `
-        ${thumb ? `<img src="${thumb}" class="search-result-thumb">` : `<div class="search-result-thumb" style="display:flex;align-items:center;justify-content:center;">🎬</div>`}
+        ${item.thumb ? `<img src="${item.thumb}" class="search-result-thumb">` : `<div class="search-result-thumb" style="display:flex;align-items:center;justify-content:center;">${typeIcon}</div>`}
         <div class="search-result-info">
-          <div class="search-result-title">${show.name} (${year})</div>
-          <div class="search-result-sub">${show.genres?.join(", ") || "Sarja"} ${show.network ? "• " + show.network.name : ""}</div>
+          <div class="search-result-title">${item.title} (${item.year})</div>
+          <div class="search-result-sub">${typeIcon} ${item.type}</div>
         </div>
       `;
       autoResultsList.appendChild(div);
     });
     autoResultsList.style.display = "block";
   } catch (err) {
-    console.error("TVMaze search error:", err);
+    console.error("Search error:", err);
   }
+}
+
+// Select result from search
+async function selectSearchResult(item) {
+  const autoResultsList = document.getElementById("autoResultsList");
+
+  if (item.source === "omdb") {
+    showToast(`Haetaan tietoja: ${item.title}...`);
+    try {
+      const res = await fetch(`https://www.omdbapi.com/?i=${item.id}&apikey=trilogy`);
+      const d = await res.json();
+      if (d && d.Response === "True") {
+        document.getElementById("addTitle").value = d.Title || item.title;
+        document.getElementById("addYear").value = (d.Year || "").replace(/[^0-9]/g, "").substring(0, 4);
+        document.getElementById("addType").value = d.Type === "series" ? "series" : "movie";
+        document.getElementById("addPosterUrl").value = d.Poster && d.Poster !== "N/A" ? d.Poster : "";
+        document.getElementById("addGenres").value = d.Genre && d.Genre !== "N/A" ? d.Genre : "";
+        document.getElementById("addCast").value = d.Actors && d.Actors !== "N/A" ? d.Actors : "";
+        document.getElementById("addCreator").value = d.Director && d.Director !== "N/A" ? d.Director : (d.Writer && d.Writer !== "N/A" ? d.Writer : "");
+        document.getElementById("addSynopsis").value = d.Plot && d.Plot !== "N/A" ? d.Plot : "";
+        document.getElementById("addLink").value = `https://www.imdb.com/title/${d.imdbID}/`;
+        if (d.imdbRating && d.imdbRating !== "N/A") {
+          const stars = Math.min(5, Math.max(1, Math.round(parseFloat(d.imdbRating) / 2)));
+          document.getElementById("addRating").value = String(stars);
+        }
+      }
+    } catch (e) {
+      console.error("OMDb detail error:", e);
+    }
+  } else if (item.source === "tvmaze") {
+    selectTVMazeShow(item.raw);
+  }
+
+  autoResultsList.style.display = "none";
+  document.getElementById("autoSearchInput").value = "";
+  showToast(`Valittu: ${item.title}`);
 }
 
 // Fill form from TVMaze show
 function selectTVMazeShow(show) {
   document.getElementById("addTitle").value = show.name;
   document.getElementById("addYear").value = show.premiered ? show.premiered.substring(0, 4) : "";
+  document.getElementById("addType").value = "series";
   document.getElementById("addPosterUrl").value = show.image?.original || show.image?.medium || "";
   document.getElementById("addSynopsis").value = show.summary ? show.summary.replace(/<[^>]+>/g, "") : "";
   document.getElementById("addGenres").value = show.genres ? show.genres.join(", ") : "";
@@ -373,10 +545,6 @@ function selectTVMazeShow(show) {
   else if (net.includes("prime") || net.includes("amazon")) document.getElementById("addPlatform").value = "Prime Video";
   else if (net.includes("hbo") || net.includes("max")) document.getElementById("addPlatform").value = "HBO Max";
   else if (net.includes("disney")) document.getElementById("addPlatform").value = "Disney+";
-
-  document.getElementById("autoResultsList").style.display = "none";
-  document.getElementById("autoSearchInput").value = "";
-  showToast(`Valittu: ${show.name}`);
 }
 
 // Add Item Submit
