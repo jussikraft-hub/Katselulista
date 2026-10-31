@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+  <title>Katselulista – Leffat & Sarjat</title>
+
+  <!-- PWA & Apple Mobile Settings -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Katselulista">
+  <meta name="theme-color" content="#07090e">
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Apple Touch Icon (Cinema Clapper) -->
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='128' fill='%23080b11'/%3E%3Cpath d='M120 140h272v232H120z' fill='%23141a29' stroke='%2300B4D8' stroke-width='16' rx='24'/%3E%3Cpolygon points='220,200 320,256 220,312' fill='%23E2B616'/%3E%3C/svg%3E">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Top App Header -->
+  <header class="app-header">
+    <div class="header-top">
+      <div class="logo-area">
+        <span class="logo-icon">🎬</span>
+        <h1 class="app-title">Katselulista</h1>
+      </div>
+      <div class="header-actions">
+        <button class="btn-icon" onclick="openSyncModal()" title="Dropbox & Synkronointi">☁️</button>
+        <button class="btn-primary" onclick="openAddModal()">+ Lisää</button>
+      </div>
+    </div>
+
+    <!-- Live Search Input -->
+    <div class="search-container">
+      <span class="search-icon-left">🔍</span>
+      <input type="text" id="searchInput" class="search-input" placeholder="Etsi sarjaa, leffaa, näyttelijää...">
+      <button id="searchClearBtn" class="search-clear-btn">✕</button>
+    </div>
+  </header>
+
+  <!-- Filters & Tabs -->
+  <section class="filters-bar">
+    <!-- Status Tabs -->
+    <div class="tabs-scroll">
+      <button class="tab-btn active" data-status="all">
+        Kaikki <span class="tab-badge" id="countAll">0</span>
+      </button>
+      <button class="tab-btn" data-status="watching">
+        ⏳ Kesken <span class="tab-badge" id="countWatching">0</span>
+      </button>
+      <button class="tab-btn" data-status="watchlist">
+        🍿 Listalla <span class="tab-badge" id="countWatchlist">0</span>
+      </button>
+      <button class="tab-btn" data-status="completed">
+        ✅ Katsotut <span class="tab-badge" id="countCompleted">0</span>
+      </button>
+    </div>
+
+    <!-- Platform Chips -->
+    <div class="chips-scroll">
+      <button class="chip-btn active" data-platform="all">Kaikki alustat</button>
+      <button class="chip-btn" data-platform="Apple TV+">Apple TV+</button>
+      <button class="chip-btn" data-platform="Netflix">Netflix</button>
+      <button class="chip-btn" data-platform="Prime Video">Prime Video</button>
+      <button class="chip-btn" data-platform="HBO Max">HBO Max</button>
+      <button class="chip-btn" data-platform="Disney+">Disney+</button>
+      <button class="chip-btn" data-platform="Yle Areena">Yle Areena</button>
+    </div>
+  </section>
+
+  <!-- Main Cards Grid -->
+  <main class="content-area">
+    <div id="cardsGrid" class="cards-grid">
+      <!-- Injected via JavaScript -->
+    </div>
+  </main>
+
+  <!-- Bottom Navigation (Mobile & iPad) -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+      <span class="nav-item-icon">🍿</span>
+      <span>Katselulista</span>
+    </button>
+    <button class="nav-item" onclick="openAddModal()">
+      <span class="nav-item-icon">➕</span>
+      <span>Uusi nimike</span>
+    </button>
+    <button class="nav-item" onclick="openSyncModal()">
+      <span class="nav-item-icon">☁️</span>
+      <span>Dropbox & Synkka</span>
+    </button>
+  </nav>
+
+  <!-- Detail Modal -->
+  <div id="detailModal" class="modal-overlay">
+    <div class="modal-sheet">
+      <div class="sheet-header">
+        <span class="sheet-title">Tiedot & Tilanne</span>
+        <button class="sheet-close-btn" onclick="closeModals()">✕</button>
+      </div>
+
+      <div class="detail-layout">
+        <div id="detailPosterBox" class="detail-poster-box">
+          <!-- Poster -->
+        </div>
+
+        <div class="detail-content">
+          <div class="detail-headline">
+            <h2 id="detailTitle">-</h2>
+            <div id="detailYearType" class="card-meta" style="margin-top: 4px;">-</div>
+            <div id="detailGenres" class="detail-tags"></div>
+          </div>
+
+          <!-- Edit status & progress -->
+          <div class="form-row" style="margin-top: 8px;">
+            <div class="form-group">
+              <label class="form-label">Katselutila</label>
+              <select id="detailStatusSelect" class="form-select">
+                <option value="watching">⏳ Kesken / Katselussa</option>
+                <option value="watchlist">🍿 Katselulistalla</option>
+                <option value="completed">✅ Katsottu</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tähtiarvio</label>
+              <select id="detailRatingSelect" class="form-select">
+                <option value="0">Ei arviota</option>
+                <option value="5">★★★★★ (Mestariteos)</option>
+                <option value="4">★★★★☆ (Erittäin hyvä)</option>
+                <option value="3">★★★☆☆ (Hyvä / Viihdyttävä)</option>
+                <option value="2">★★☆☆☆ (Keskinkertainen)</option>
+                <option value="1">★☆☆☆☆ (Heikko)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Edistyminen / Kausi (esim. "Kausi 1 katsottu")</label>
+            <input type="text" id="detailProgressInput" class="form-input" placeholder="Missä mennään...">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Omat muistiinpanot</label>
+            <textarea id="detailNotesInput" class="form-textarea" rows="2" placeholder="Omat huomiot, suositus, fiilikset..."></textarea>
+          </div>
+
+          <!-- Synopsis & Cast -->
+          <div class="detail-section">
+            <span class="section-label">Kuvaus</span>
+            <p id="detailSynopsis" class="section-body">-</p>
+          </div>
+
+          <div class="detail-section">
+            <span class="section-label">Näyttelijät</span>
+            <p id="detailCast" class="section-body">-</p>
+          </div>
+
+          <div class="detail-section">
+            <span class="section-label">Luoja / Ohjaaja</span>
+            <p id="detailCreator" class="section-body">-</p>
+          </div>
+
+          <!-- Actions -->
+          <div style="display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap;">
+            <button class="btn-primary" onclick="saveDetailEdits()" style="flex: 1; justify-content: center;">Tallenna muutokset</button>
+            <a id="detailLinkBtn" href="#" target="_blank" class="btn-icon" style="width: auto; padding: 0 14px; text-decoration: none; gap: 6px; font-size: 13px; font-weight: 600;">Avaa linkki ↗</a>
+            <button class="btn-icon" onclick="deleteActiveItem()" title="Poista nimike" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">🗑</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Item Modal -->
+  <div id="addModal" class="modal-overlay">
+    <div class="modal-sheet">
+      <div class="sheet-header">
+        <span class="sheet-title">Lisää leffa tai sarja</span>
+        <button class="sheet-close-btn" onclick="closeModals()">✕</button>
+      </div>
+
+      <!-- TVMaze Auto-complete -->
+      <div class="form-group" style="position: relative;">
+        <label class="form-label">🔍 Etsi automaattisesti nimen perusteella (hakee julisteen ja tiedot)</label>
+        <input type="text" id="autoSearchInput" class="form-input" placeholder="Kirjoita sarjan tai leffan nimi (esim. Severance, The Bear)...">
+        <div id="autoResultsList" class="search-results-list"></div>
+      </div>
+
+      <div style="text-align: center; color: var(--text-dim); font-size: 11px; margin: 8px 0 14px 0; text-transform: uppercase; letter-spacing: 1px;">tai syötä suoraan käsin</div>
+
+      <form id="addItemForm" onsubmit="submitAddItem(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Nimi *</label>
+            <input type="text" id="addTitle" class="form-input" required placeholder="Esim. Shōgun">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Julkaisuvuosi</label>
+            <input type="text" id="addYear" class="form-input" placeholder="2024">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Tyyppi</label>
+            <select id="addType" class="form-select">
+              <option value="series">Sarja</option>
+              <option value="miniseries">Minisarja</option>
+              <option value="movie">Elokuva</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Alusta</label>
+            <select id="addPlatform" class="form-select">
+              <option value="Apple TV+">Apple TV+</option>
+              <option value="Netflix">Netflix</option>
+              <option value="Prime Video">Prime Video</option>
+              <option value="HBO Max">HBO Max</option>
+              <option value="Disney+">Disney+</option>
+              <option value="Yle Areena">Yle Areena</option>
+              <option value="Elokuvateatteri">Elokuvateatteri</option>
+              <option value="Muu">Muu</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Tila</label>
+            <select id="addStatus" class="form-select">
+              <option value="watching">⏳ Kesken / Katselussa</option>
+              <option value="watchlist" selected>🍿 Katselulistalla</option>
+              <option value="completed">✅ Katsottu</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tähtiarvio</label>
+            <select id="addRating" class="form-select">
+              <option value="0">Ei arviota</option>
+              <option value="5">★★★★★</option>
+              <option value="4">★★★★☆</option>
+              <option value="3">★★★☆☆</option>
+              <option value="2">★★☆☆☆</option>
+              <option value="1">★☆☆☆☆</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Edistyminen / Kausi</label>
+          <input type="text" id="addProgress" class="form-input" placeholder="Esim. 1. kausi katsottu tai 7 jaksoa">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Julistekuvan osoite (URL)</label>
+          <input type="url" id="addPosterUrl" class="form-input" placeholder="https://...">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Genret (pilkulla erotettuna)</label>
+          <input type="text" id="addGenres" class="form-input" placeholder="Draama, Scifi, Rikos">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Näyttelijät</label>
+          <input type="text" id="addCast" class="form-input" placeholder="Pääosan esittäjät...">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Luoja / Ohjaaja</label>
+          <input type="text" id="addCreator" class="form-input" placeholder="Ohjaaja tai sarjan luoja...">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Kuvaus / Juoni</label>
+          <textarea id="addSynopsis" class="form-textarea" rows="2" placeholder="Lyhyt synopsis..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Omat muistiinpanot</label>
+          <input type="text" id="addNotes" class="form-input" placeholder="Miksi kiinnostaa, suosittelija...">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Linkki (Wikipedia / IMDb)</label>
+          <input type="url" id="addLink" class="form-input" placeholder="https://en.wikipedia.org/wiki/...">
+        </div>
+
+        <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 12px; margin-top: 8px;">
+          Tallenna listalle
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Sync & Cloud Modal -->
+  <div id="syncModal" class="modal-overlay">
+    <div class="modal-sheet">
+      <div class="sheet-header">
+        <span class="sheet-title">☁️ Dropbox & Synkronointi</span>
+        <button class="sheet-close-btn" onclick="closeModals()">✕</button>
+      </div>
+
+      <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+        Voit synkronoida katselulistan automaattisesti Dropboxiin puhelimella tai iPadilla, jolloin sama lista päivittyy Macille ja säilyy turvassa.
+      </p>
+
+      <!-- Dropbox Section -->
+      <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 16px;">
+        <div style="font-size: 14px; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+          <span>📦 Dropbox Pilvisynkka</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Dropbox Access Token</label>
+          <input type="password" id="dropboxTokenInput" class="form-input" placeholder="sl.u.AF...">
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="btn-icon" style="width: auto; padding: 0 12px; font-size: 12px; font-weight: 600;" onclick="saveDropboxToken()">Tallenna avain</button>
+          <button class="btn-primary" style="font-size: 12px;" onclick="uploadToDropbox()">⬆️ Vie Dropboxiin</button>
+          <button class="btn-icon" style="width: auto; padding: 0 12px; font-size: 12px; font-weight: 600;" onclick="downloadFromDropbox()">⬇️ Hae Dropboxista</button>
+        </div>
+        <p style="font-size: 11px; color: var(--text-dim); margin-top: 8px;">
+          Tallentaa tiedoston <code>/katselulista.json</code> omaan Dropboxiisi.
+        </p>
+      </div>
+
+      <!-- Obsidian Export -->
+      <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 16px;">
+        <div style="font-size: 14px; font-weight: 700; margin-bottom: 8px;">📋 Obsidian-synkka</div>
+        <p style="font-size: 12px; color: var(--text-dim); margin-bottom: 10px;">
+          Luo koko katselulistan Markdown-tekstinä, jonka voit liittää suoraan Obsidianin tiedostoon <code>04 - Elämä & Luova/Katselulista.md</code>.
+        </p>
+        <button class="btn-primary" style="font-size: 12px;" onclick="exportToObsidianMarkdown()">Kopioi Markdown leikepöydälle</button>
+      </div>
+
+      <!-- JSON Backup & Restore -->
+      <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 14px;">
+        <div style="font-size: 14px; font-weight: 700; margin-bottom: 8px;">💾 JSON-varmuuskopio</div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="btn-icon" style="width: auto; padding: 0 12px; font-size: 12px; font-weight: 600;" onclick="exportJSONFile()">Lataa JSON-tiedosto</button>
+          <label class="btn-icon" style="width: auto; padding: 0 12px; font-size: 12px; font-weight: 600; cursor: pointer;">
+            Tuo JSON
+            <input type="file" accept=".json" style="display: none;" onchange="importJSONFile(event)">
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Element -->
+  <div id="toast" class="toast-msg">Ilmoitus</div>
+
+  <script src="app.js"></script>
+</body>
+</html>
