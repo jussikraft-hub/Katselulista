@@ -3,13 +3,13 @@ name: PRD_Katselulista_App
 description: >-
   Suunnitelma ja tuotespesifikaatio mobiili- ja iPad-optimoitua elokuvien ja sarjojen katselusovellusta varten.
 domain: Personal
-stage: 2_PLAN
-status: DRAFT
+stage: 5_DONE
+status: APPROVED
 created: 2026-10-31
-updated: 2026-10-31
+updated: 2026-11-01
 ---
 
-# PRD: Katselulista – Elokuvat & Sarjat (Cinematic Mobile/iPad Web App)
+# PRD: Katselulista – Elokuvat & Sarjat (Cinematic Mobile/iPad Web App) [LUKITTU & HYVÄKSYTTY]
 
 ## 1. Johdanto ja Tavoite
 
@@ -120,3 +120,20 @@ Sovellukseen esiasennetaan heti valmiiksi Jussin mainitsemat nimikkeet:
 2. **Siilo / Silo (Apple TV+)** – Tila: *Kesken* (Kausi 1–2) | Julistekuva mukana
 3. **Fallout (Prime Video)** – Tila: *Kesken* (Kausi 1 katsottu, odottaa Kautta 2) | Julistekuva mukana
 4. **East of Eden (Netflix)** – Tila: *Katselulistalla* (Minisarja 2026) | Julistekuva mukana
+
+---
+
+## 7. Toteutettu ja Hyväksytty Lopputulos (Stage 5 Gate)
+
+* **Tila:** `STAGE:5_DONE` / `status: APPROVED` (Hyväksytty tuotantoon 2026-11-01).
+* **Tuotoskori:**
+  - `index.html`: Responsiivinen PWA iPad-, iPhone- ja Mac-tuella, OLED Cinematic Dark -teema, reaaliaikainen haku, tilasuodattimet, täysi muokkausmodaali ja varmuuskopiointi.
+  - `style.css`: Suunnittelujärjestelmän mukaiset värit, lasimorfinen modaali, 2:3 -kuvasuhteen elokuvajulisteet lukitulla skaalauksella ja iPad-optimoidulla leveydellä (230 px).
+  - `app.js`: OMDb- ja TVMaze-reaaliaikahaku, julisteiden haku, `localStorage`-pysyvyys, suora Dropbox API -synkronointi (`/katselulista.json`), Obsidian Markdown -vienti ja täydet muokkaustoiminnot.
+  - `server.py`: Paikallinen Wi-Fi-palvelin QR-koodilla lähiverkkokäyttöön.
+  - `test_suite.py`: 5/5 testiä läpäisty (JSON, JS-syntaksi, HTML, CSS, Server CLI).
+* **Jakelu & Julkaisu:**
+  - GitHub-repositorio: `https://github.com/jussikraft-hub/Katselulista.git` (haara `main`).
+  - GitHub Pages: `https://jussikraft-hub.github.io/Katselulista/`.
+* **Synkronointi & Turvallisuus:**
+  - Kaikki omat katselulistan tiedot tallennetaan vain käyttäjän omaan laitteeseen (`localStorage`) ja omaan henkilökohtaiseen Dropboxiin (`/katselulista.json`). GitHubiin ei viedä henkilökohtaisia tietoja.
