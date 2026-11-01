@@ -13,7 +13,19 @@ PORT = 8088
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 JSON_FILE = os.path.join(SCRIPT_DIR, "katselulista.json")
 DROPBOX_DIR = os.path.expanduser("~/Library/CloudStorage/Dropbox-Personal/Kraft")
-OBSIDIAN_DIR = os.path.expanduser("~/Library/Mobile Documents/iCloud~md~obsidian/Documents/JussiKraft/04 - Elämä & Luova")
+def get_obsidian_dir():
+    env_dir = os.environ.get("OBSIDIAN_DIR")
+    if env_dir:
+        return env_dir
+    base = os.path.expanduser("~/Library/Mobile Documents/iCloud~md~obsidian/Documents")
+    if os.path.isdir(base):
+        for entry in os.listdir(base):
+            target = os.path.join(base, entry, "04 - Elämä & Luova")
+            if os.path.isdir(target):
+                return target
+    return os.path.join(base, "Vault", "04 - Elämä & Luova")
+
+OBSIDIAN_DIR = get_obsidian_dir()
 
 def get_wifi_ip():
     """Detect macOS Wi-Fi IP address (en0 / en1)"""
