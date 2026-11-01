@@ -24,10 +24,14 @@
     <div class="header-top">
       <div class="logo-area">
         <span class="logo-icon">🎬</span>
-        <h1 class="app-title">Katselulista</h1>
+        <div>
+          <h1 class="app-title">Katselulista</h1>
+          <span class="app-subtitle" id="headerCountSub">- nimikettä</span>
+        </div>
       </div>
       <div class="header-actions">
-        <button class="btn-icon" onclick="openSyncModal()" title="Dropbox & Synkronointi">☁️</button>
+        <button class="btn-icon" id="randomRollBtn" title="Arvo mitä katsotaan seuraavaksi" onclick="rollRandomItem()">🎲</button>
+        <button class="btn-icon" onclick="openSyncModal()" title="Dropbox, Obsidian & Varmuuskopiot">☁️</button>
         <button class="btn-primary" onclick="openAddModal()">+ Lisää</button>
       </div>
     </div>
@@ -35,12 +39,12 @@
     <!-- Live Search Input -->
     <div class="search-container">
       <span class="search-icon-left">🔍</span>
-      <input type="text" id="searchInput" class="search-input" placeholder="Etsi sarjaa, leffaa, näyttelijää...">
+      <input type="text" id="searchInput" class="search-input" placeholder="Etsi sarjaa, leffaa, näyttelijää tai ohjaajaa...">
       <button id="searchClearBtn" class="search-clear-btn">✕</button>
     </div>
   </header>
 
-  <!-- Filters & Tabs -->
+  <!-- Filters & Controls Bar -->
   <section class="filters-bar">
     <!-- Status Tabs -->
     <div class="tabs-scroll">
@@ -58,6 +62,52 @@
       </button>
     </div>
 
+    <!-- Controls Row: Sorting, Type Filter & View Toggle -->
+    <div class="controls-row">
+      <div class="control-field sort-field">
+        <label for="sortSelect" class="control-label">Lajittele</label>
+        <select id="sortSelect" class="control-select">
+          <option value="recent">Uusin lisätty ensin</option>
+          <option value="oldest">Vanhin lisätty ensin</option>
+          <option value="titleAsc">Nimi (A &rarr; Ö)</option>
+          <option value="titleDesc">Nimi (Ö &rarr; A)</option>
+          <option value="ratingDesc">Arvosana (Korkein)</option>
+          <option value="ratingAsc">Arvosana (Matalin)</option>
+          <option value="yearDesc">Julkaisuvuosi (Uusin)</option>
+          <option value="yearAsc">Julkaisuvuosi (Vanhin)</option>
+        </select>
+      </div>
+
+      <div class="control-field type-field">
+        <label for="typeFilterSelect" class="control-label">Tyyppi</label>
+        <select id="typeFilterSelect" class="control-select">
+          <option value="all">Kaikki tyypit</option>
+          <option value="series">📺 Sarjat</option>
+          <option value="movie">🎬 Elokuvat</option>
+          <option value="miniseries">🎞️ Minisarjat</option>
+          <option value="doc">📜 Dokumentit</option>
+        </select>
+      </div>
+
+      <div class="view-toggles">
+        <button id="viewGridBtn" class="view-btn active" title="Korttinäkymä" onclick="switchView('grid')">
+          <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
+            <rect x="1" y="1" width="6" height="6" rx="1.5"/>
+            <rect x="9" y="1" width="6" height="6" rx="1.5"/>
+            <rect x="1" y="9" width="6" height="6" rx="1.5"/>
+            <rect x="9" y="9" width="6" height="6" rx="1.5"/>
+          </svg>
+        </button>
+        <button id="viewListBtn" class="view-btn" title="Tiivis listanäkymä" onclick="switchView('list')">
+          <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
+            <rect x="1" y="2" width="14" height="3" rx="1"/>
+            <rect x="1" y="7" width="14" height="3" rx="1"/>
+            <rect x="1" y="12" width="14" height="3" rx="1"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
     <!-- Platform Chips -->
     <div class="chips-scroll">
       <button class="chip-btn active" data-platform="all">Kaikki alustat</button>
@@ -67,12 +117,21 @@
       <button class="chip-btn" data-platform="HBO Max">HBO Max</button>
       <button class="chip-btn" data-platform="Disney+">Disney+</button>
       <button class="chip-btn" data-platform="Yle Areena">Yle Areena</button>
+      <button class="chip-btn" data-platform="SkyShowtime">SkyShowtime</button>
+      <button class="chip-btn" data-platform="Ruutu">Ruutu</button>
+      <button class="chip-btn" data-platform="Muu">Muu</button>
     </div>
   </section>
 
-  <!-- Main Cards Grid -->
+  <!-- Main Cards & List Area -->
   <main class="content-area">
+    <!-- Grid View -->
     <div id="cardsGrid" class="cards-grid">
+      <!-- Injected via JavaScript -->
+    </div>
+
+    <!-- Compact List View (Hidden by default) -->
+    <div id="cardsList" class="cards-list" style="display: none;">
       <!-- Injected via JavaScript -->
     </div>
   </main>
@@ -83,15 +142,36 @@
       <span class="nav-item-icon">🍿</span>
       <span>Katselulista</span>
     </button>
+    <button class="nav-item" onclick="rollRandomItem()">
+      <span class="nav-item-icon">🎲</span>
+      <span>Arvo leffa</span>
+    </button>
     <button class="nav-item" onclick="openAddModal()">
       <span class="nav-item-icon">➕</span>
       <span>Uusi nimike</span>
     </button>
     <button class="nav-item" onclick="openSyncModal()">
       <span class="nav-item-icon">☁️</span>
-      <span>Dropbox & Synkka</span>
+      <span>Synkronointi</span>
     </button>
   </nav>
+
+  <!-- Random Picker Modal -->
+  <div id="randomModal" class="modal-overlay">
+    <div class="modal-sheet random-sheet">
+      <div class="sheet-header">
+        <span class="sheet-title">🎲 Mitä katsotaan tänään?</span>
+        <button class="sheet-close-btn" onclick="closeModals()">✕</button>
+      </div>
+      <div id="randomCardContent" class="random-content">
+        <!-- Injected via JavaScript -->
+      </div>
+      <div class="random-actions">
+        <button class="btn-icon" style="flex: 1; height: 44px; font-weight: 600;" onclick="rollRandomItem()">🎲 Arvo toinen</button>
+        <button id="randomOpenDetailBtn" class="btn-primary" style="flex: 1.2; justify-content: center; height: 44px;">Avaa tiedot ➔</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Detail Modal -->
   <div id="detailModal" class="modal-overlay">
@@ -119,12 +199,20 @@
             <div id="detailGenres" class="detail-tags"></div>
           </div>
 
+          <!-- Quick Actions: Watching Now -->
+          <div id="detailQuickActionBox" style="display: none; margin-top: 10px;">
+            <button class="btn-primary" onclick="setWatchingNow()" style="width: 100%; justify-content: center; background: linear-gradient(135deg, #10b981 0%, #059669 100%); font-size: 15px; padding: 12px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);">
+              ▶️ Katson juuri nyt
+            </button>
+          </div>
+
           <!-- Quick status & progress view -->
           <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px; margin-top: 6px; display: flex; flex-direction: column; gap: 8px;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
-              <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
                 <span class="section-label">Tila:</span>
-                <span id="detailStatusBadge" class="badge-status watching" style="position: static; margin-left: 6px;">Kesken</span>
+                <span id="detailStatusBadge" class="badge-status watching" style="position: static; margin-left: 0;">Kesken</span>
+                <button id="detailCycleStatusBtn" class="btn-inline-cycle" onclick="cycleActiveItemStatus()" title="Vaihda seuraavaan katselutilaan">↻ Vaihda</button>
               </div>
               <div id="detailRatingDisplay" style="color: var(--gold); font-size: 14px;">★★★☆☆</div>
             </div>
@@ -151,7 +239,7 @@
           <!-- Actions in View Mode -->
           <div style="display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap;">
             <button class="btn-primary" onclick="toggleDetailEditMode()" style="flex: 1; justify-content: center; gap: 6px;">
-              ✏️ Muokkaa tietoja
+              ✏️ Muokkaa
             </button>
             <a id="detailLinkBtn" href="#" target="_blank" class="btn-icon" style="width: auto; padding: 0 14px; text-decoration: none; gap: 6px; font-size: 13px; font-weight: 600;">Avaa linkki ↗</a>
             <button class="btn-icon" onclick="deleteActiveItem()" title="Poista nimike" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">🗑</button>
@@ -177,9 +265,10 @@
             <div class="form-group">
               <label class="form-label">Tyyppi</label>
               <select id="detailEditType" class="form-select">
-                <option value="movie">Elokuva</option>
                 <option value="series">Sarja</option>
+                <option value="movie">Elokuva</option>
                 <option value="miniseries">Minisarja</option>
+                <option value="doc">Dokumentti</option>
               </select>
             </div>
             <div class="form-group">
@@ -191,6 +280,8 @@
                 <option value="HBO Max">HBO Max</option>
                 <option value="Disney+">Disney+</option>
                 <option value="Yle Areena">Yle Areena</option>
+                <option value="SkyShowtime">SkyShowtime</option>
+                <option value="Ruutu">Ruutu</option>
                 <option value="Elokuvateatteri">Elokuvateatteri</option>
                 <option value="Muu">Muu</option>
               </select>
@@ -201,7 +292,7 @@
             <div class="form-group">
               <label class="form-label">Katselutila</label>
               <select id="detailEditStatus" class="form-select">
-                <option value="watching">⏳ Kesken / Katselussa</option>
+                <option value="watching">⏳ Kesken / Katson juuri nyt</option>
                 <option value="watchlist">🍿 Katselulistalla</option>
                 <option value="completed">✅ Katsottu</option>
               </select>
@@ -220,8 +311,8 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label">Edistyminen / Kausi</label>
-            <input type="text" id="detailEditProgress" class="form-input" placeholder="Esim. Kausi 1 katsottu">
+            <label class="form-label">Edistyminen / Kausi / Jakso</label>
+            <input type="text" id="detailEditProgress" class="form-input" placeholder="Esim. S02E04 tai 1. kausi katsottu">
           </div>
 
           <div class="form-group">
@@ -306,8 +397,9 @@
             <label class="form-label">Tyyppi</label>
             <select id="addType" class="form-select">
               <option value="series">Sarja</option>
-              <option value="miniseries">Minisarja</option>
               <option value="movie">Elokuva</option>
+              <option value="miniseries">Minisarja</option>
+              <option value="doc">Dokumentti</option>
             </select>
           </div>
           <div class="form-group">
@@ -319,6 +411,8 @@
               <option value="HBO Max">HBO Max</option>
               <option value="Disney+">Disney+</option>
               <option value="Yle Areena">Yle Areena</option>
+              <option value="SkyShowtime">SkyShowtime</option>
+              <option value="Ruutu">Ruutu</option>
               <option value="Elokuvateatteri">Elokuvateatteri</option>
               <option value="Muu">Muu</option>
             </select>
@@ -329,7 +423,7 @@
           <div class="form-group">
             <label class="form-label">Tila</label>
             <select id="addStatus" class="form-select">
-              <option value="watching">⏳ Kesken / Katselussa</option>
+              <option value="watching">⏳ Kesken / Katson juuri nyt</option>
               <option value="watchlist" selected>🍿 Katselulistalla</option>
               <option value="completed">✅ Katsottu</option>
             </select>
@@ -348,8 +442,8 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label">Edistyminen / Kausi</label>
-          <input type="text" id="addProgress" class="form-input" placeholder="Esim. 1. kausi katsottu tai 7 jaksoa">
+          <label class="form-label">Edistyminen / Kausi / Jakso</label>
+          <input type="text" id="addProgress" class="form-input" placeholder="Esim. S01E03 tai 1. kausi katsottu">
         </div>
 
         <div class="form-group">
@@ -358,7 +452,7 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label">Genret (pilkulla erotettuna)</label>
+          <label class="form-label">Genret (pilkulla eroteltuna)</label>
           <input type="text" id="addGenres" class="form-input" placeholder="Draama, Scifi, Rikos">
         </div>
 
@@ -403,7 +497,7 @@
       </div>
 
       <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
-        Voit synkronoida katselulistan automaattisesti Dropboxiin puhelimella tai iPadilla, jolloin sama lista päivittyy Macille ja säilyy turvassa.
+        Asettamalla avaimen sovellus <strong>synkronoi automaattisesti taustalla</strong> aina kun teet muutoksia listaan.
       </p>
 
       <!-- Dropbox Section -->
@@ -417,7 +511,7 @@
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
           <button class="btn-icon" style="width: auto; padding: 0 12px; font-size: 12px; font-weight: 600;" onclick="saveDropboxToken()">Tallenna avain</button>
-          <button class="btn-primary" style="font-size: 12px;" onclick="uploadToDropbox()">⬆️ Vie Dropboxiin</button>
+          <button class="btn-primary" style="font-size: 12px;" onclick="uploadToDropbox(false)">⬆️ Pakota vienti</button>
           <button class="btn-icon" style="width: auto; padding: 0 12px; font-size: 12px; font-weight: 600;" onclick="downloadFromDropbox()">⬇️ Hae Dropboxista</button>
         </div>
         <p style="font-size: 11px; color: var(--text-dim); margin-top: 8px;">
