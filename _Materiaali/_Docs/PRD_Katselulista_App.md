@@ -15,7 +15,7 @@ updated: 2026-11-01
 
 Tämän projektin tavoitteena on luoda visuaalisesti ensiluokkainen, helppokäyttöinen ja responsiivinen **Katselulista-sovellus** (Web App / PWA), joka on optimoitu erityisesti iPhonelle ja iPadille (sekä toimii sulavasti Macilla).
 
-Sovelluksen avulla Jussi voi:
+Sovelluksen avulla käyttäjä voi:
 1. Selata leffoja ja sarjoja visuaalisina julistekortteina (Posters, genret, alustat, näyttelijät, arviot).
 2. Nähdä heti mitä on **Kesken** (esim. *Sugar*, *Siilo*, *Fallout*), mitä **Katselulistalla** (*East of Eden*) ja mitä jo **Katsottu**.
 3. Lisätä uusia elokuvia ja sarjoja helposti kännykällä ilman raskasta näpyttelyä (automaattinen kuvien ja tietojen nouto tai nopea manuaalilisäys).
