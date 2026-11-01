@@ -299,7 +299,13 @@ function renderCards(filtered) {
           ${item.genres && item.genres.length > 0 ? `<span>• ${item.genres[0]}</span>` : ""}
         </div>
         ${item.progress ? `<div class="card-progress">📍 ${item.progress}</div>` : ""}
-        ${ratingStars ? `<div class="card-rating">${ratingStars}</div>` : ""}
+        <div class="card-footer-row">
+          ${ratingStars ? `<div class="card-rating">${ratingStars}</div>` : `<span style="flex:1;"></span>`}
+          <button class="btn-card-trailer" onclick="event.stopPropagation(); openTrailerByItemId('${item.id}')" title="Katso traileri YouTubesta">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="#ff0000"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+            <span>Traileri</span>
+          </button>
+        </div>
       </div>
     `;
     gridEl.appendChild(card);
@@ -356,9 +362,17 @@ function renderCompactList(filtered) {
         </div>
       </div>
       <div class="list-item-meta-right">
-        <div class="badge-platform ${platformClass}" style="position: static; font-size: 9px; padding: 2px 6px;">${item.platform || "Muu"}</div>
-        <div class="badge-status ${item.status}" style="position: static; font-size: 9px; padding: 2px 6px;">${statusLabel}</div>
-        ${ratingStars ? `<div style="font-size: 10px; color: var(--gold);">${ratingStars}</div>` : ""}
+        <div style="display: flex; gap: 4px; align-items: center;">
+          <div class="badge-platform ${platformClass}" style="position: static; font-size: 9px; padding: 2px 6px;">${item.platform || "Muu"}</div>
+          <div class="badge-status ${item.status}" style="position: static; font-size: 9px; padding: 2px 6px;">${statusLabel}</div>
+        </div>
+        <div style="display: flex; gap: 6px; align-items: center; justify-content: flex-end; margin-top: 4px;">
+          ${ratingStars ? `<div style="font-size: 10px; color: var(--gold);">${ratingStars}</div>` : ""}
+          <button class="btn-card-trailer btn-trailer-mini" onclick="event.stopPropagation(); openTrailerByItemId('${item.id}')" title="Katso traileri YouTubesta">
+            <svg viewBox="0 0 24 24" width="11" height="11" fill="#ff0000"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+            <span>Traileri</span>
+          </button>
+        </div>
       </div>
     `;
     listEl.appendChild(row);
@@ -415,6 +429,25 @@ function rollRandomItem() {
   };
 
   if(randomModal) randomModal.classList.add("active");
+}
+
+// YouTube Trailer Search
+function openYouTubeTrailer(title, year) {
+  const query = `${title || ""} ${year || ""} trailer`.trim();
+  const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
+function openTrailerByItemId(id) {
+  const item = items.find(i => i.id === id);
+  if (!item) return;
+  openYouTubeTrailer(item.title, item.year);
+}
+
+function openActiveItemTrailer() {
+  if (activeItem) {
+    openYouTubeTrailer(activeItem.title, activeItem.year);
+  }
 }
 
 function openDetailModal(id) {

@@ -163,12 +163,14 @@
         <span class="sheet-title">🎲 Mitä katsotaan tänään?</span>
         <button class="sheet-close-btn" onclick="closeModals()">✕</button>
       </div>
-      <div id="randomCardContent" class="random-content">
-        <!-- Injected via JavaScript -->
-      </div>
-      <div class="random-actions">
-        <button class="btn-icon" style="flex: 1; height: 44px; font-weight: 600;" onclick="rollRandomItem()">🎲 Arvo toinen</button>
-        <button id="randomOpenDetailBtn" class="btn-primary" style="flex: 1.2; justify-content: center; height: 44px;">Avaa tiedot ➔</button>
+      <div class="sheet-scroll-body">
+        <div id="randomCardContent" class="random-content">
+          <!-- Injected via JavaScript -->
+        </div>
+        <div class="random-actions">
+          <button class="btn-icon" style="flex: 1; height: 44px; font-weight: 600;" onclick="rollRandomItem()">🎲 Arvo toinen</button>
+          <button id="randomOpenDetailBtn" class="btn-primary" style="flex: 1.2; justify-content: center; height: 44px;">Avaa tiedot ➔</button>
+        </div>
       </div>
     </div>
   </div>
@@ -186,7 +188,8 @@
         <button class="sheet-close-btn" onclick="closeModals()">✕</button>
       </div>
 
-      <!-- VIEW MODE -->
+      <div class="sheet-scroll-body">
+        <!-- VIEW MODE -->
       <div id="detailViewContainer" class="detail-layout">
         <div id="detailPosterBox" class="detail-poster-box">
           <!-- Poster -->
@@ -240,6 +243,10 @@
           <div style="display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap;">
             <button class="btn-primary" onclick="toggleDetailEditMode()" style="flex: 1; justify-content: center; gap: 6px;">
               ✏️ Muokkaa
+            </button>
+            <button id="detailTrailerBtn" class="btn-icon" onclick="openActiveItemTrailer()" style="width: auto; padding: 0 14px; gap: 6px; font-size: 13px; font-weight: 600; color: #ff5252; border-color: rgba(255, 0, 0, 0.35);" title="Katso traileri YouTubesta">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="#ff0000"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+              <span>Traileri</span>
             </button>
             <a id="detailLinkBtn" href="#" target="_blank" class="btn-icon" style="width: auto; padding: 0 14px; text-decoration: none; gap: 6px; font-size: 13px; font-weight: 600;">Avaa linkki ↗</a>
             <button class="btn-icon" onclick="deleteActiveItem()" title="Poista nimike" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">🗑</button>
@@ -360,6 +367,7 @@
           </div>
         </form>
       </div>
+      </div>
     </div>
   </div>
 
@@ -371,7 +379,8 @@
         <button class="sheet-close-btn" onclick="closeModals()">✕</button>
       </div>
 
-      <!-- Live Auto-complete (OMDb + TVMaze) -->
+      <div class="sheet-scroll-body">
+        <!-- Live Auto-complete (OMDb + TVMaze) -->
       <div class="form-group" style="position: relative;">
         <label class="form-label">🔍 Etsi automaattisesti (elokuvat, klassikot ja sarjat)</label>
         <input type="text" id="autoSearchInput" class="form-input" placeholder="Esim. Casablanca, Cinema Paradiso, Siilo, Godfather...">
@@ -485,6 +494,7 @@
           Tallenna listalle
         </button>
       </form>
+      </div>
     </div>
   </div>
 
@@ -496,47 +506,49 @@
         <button class="sheet-close-btn" onclick="closeModals()">✕</button>
       </div>
 
-      <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
-        Asettamalla avaimen sovellus <strong>synkronoi automaattisesti taustalla</strong> aina kun teet muutoksia listaan.
-      </p>
-
-      <!-- Dropbox Section -->
-      <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 16px;">
-        <div style="font-size: 14px; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-          <span>📦 Dropbox Pilvisynkka</span>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Dropbox Access Token</label>
-          <input type="password" id="dropboxTokenInput" class="form-input" placeholder="sl.u.AF...">
-        </div>
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button class="btn-icon" style="width: auto; padding: 0 12px; font-size: 12px; font-weight: 600;" onclick="saveDropboxToken()">Tallenna avain</button>
-          <button class="btn-primary" style="font-size: 12px;" onclick="uploadToDropbox(false)">⬆️ Pakota vienti</button>
-          <button class="btn-icon" style="width: auto; padding: 0 12px; font-size: 12px; font-weight: 600;" onclick="downloadFromDropbox()">⬇️ Hae Dropboxista</button>
-        </div>
-        <p style="font-size: 11px; color: var(--text-dim); margin-top: 8px;">
-          Tallentaa tiedoston <code>/katselulista.json</code> omaan Dropboxiisi.
+      <div class="sheet-scroll-body">
+        <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+          Asettamalla avaimen sovellus <strong>synkronoi automaattisesti taustalla</strong> aina kun teet muutoksia listaan.
         </p>
-      </div>
 
-      <!-- Obsidian Export -->
-      <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 16px;">
-        <div style="font-size: 14px; font-weight: 700; margin-bottom: 8px;">📋 Obsidian-synkka</div>
-        <p style="font-size: 12px; color: var(--text-dim); margin-bottom: 10px;">
-          Luo koko katselulistan Markdown-tekstinä, jonka voit liittää suoraan Obsidianin tiedostoon <code>04 - Elämä & Luova/Katselulista.md</code>.
-        </p>
-        <button class="btn-primary" style="font-size: 12px;" onclick="exportToObsidianMarkdown()">Kopioi Markdown leikepöydälle</button>
-      </div>
+        <!-- Dropbox Section -->
+        <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 16px;">
+          <div style="font-size: 14px; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+            <span>📦 Dropbox Pilvisynkka</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Dropbox Access Token</label>
+            <input type="password" id="dropboxTokenInput" class="form-input" placeholder="sl.u.AF...">
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn-icon" style="width: auto; padding: 0 12px; font-size: 12px; font-weight: 600;" onclick="saveDropboxToken()">Tallenna avain</button>
+            <button class="btn-primary" style="font-size: 12px;" onclick="uploadToDropbox(false)">⬆️ Pakota vienti</button>
+            <button class="btn-icon" style="width: auto; padding: 0 12px; font-size: 12px; font-weight: 600;" onclick="downloadFromDropbox()">⬇️ Hae Dropboxista</button>
+          </div>
+          <p style="font-size: 11px; color: var(--text-dim); margin-top: 8px;">
+            Tallentaa tiedoston <code>/katselulista.json</code> omaan Dropboxiisi.
+          </p>
+        </div>
 
-      <!-- JSON Backup & Restore -->
-      <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 14px;">
-        <div style="font-size: 14px; font-weight: 700; margin-bottom: 8px;">💾 JSON-varmuuskopio</div>
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button class="btn-icon" style="width: auto; padding: 0 12px; font-size: 12px; font-weight: 600;" onclick="exportJSONFile()">Lataa JSON-tiedosto</button>
-          <label class="btn-icon" style="width: auto; padding: 0 12px; font-size: 12px; font-weight: 600; cursor: pointer;">
-            Tuo JSON
-            <input type="file" accept=".json" style="display: none;" onchange="importJSONFile(event)">
-          </label>
+        <!-- Obsidian Export -->
+        <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 16px;">
+          <div style="font-size: 14px; font-weight: 700; margin-bottom: 8px;">📋 Obsidian-synkka</div>
+          <p style="font-size: 12px; color: var(--text-dim); margin-bottom: 10px;">
+            Luo koko katselulistan Markdown-tekstinä, jonka voit liittää suoraan Obsidianin tiedostoon <code>04 - Elämä & Luova/Katselulista.md</code>.
+          </p>
+          <button class="btn-primary" style="font-size: 12px;" onclick="exportToObsidianMarkdown()">Kopioi Markdown leikepöydälle</button>
+        </div>
+
+        <!-- JSON Backup & Restore -->
+        <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 14px;">
+          <div style="font-size: 14px; font-weight: 700; margin-bottom: 8px;">💾 JSON-varmuuskopio</div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn-icon" style="width: auto; padding: 0 12px; font-size: 12px; font-weight: 600;" onclick="exportJSONFile()">Lataa JSON-tiedosto</button>
+            <label class="btn-icon" style="width: auto; padding: 0 12px; font-size: 12px; font-weight: 600; cursor: pointer;">
+              Tuo JSON
+              <input type="file" accept=".json" style="display: none;" onchange="importJSONFile(event)">
+            </label>
+          </div>
         </div>
       </div>
     </div>
