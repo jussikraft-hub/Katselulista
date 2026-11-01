@@ -1031,6 +1031,244 @@ function importJSONFile(e) {
   reader.readAsText(file);
 }
 
+// Robust CSV parser supporting quotes, commas, and multiline values (RFC 4180)
+function parseCSV(text) {
+  const rows = [];
+  let row = [""];
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    const next = text[i + 1];
+
+    if (c === '"') {
+      if (inQuotes && next === '"') {
+        row[row.length - 1] += '"';
+        i++; // skip escaped quote
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (c === ',' && !inQuotes) {
+      row.push('');
+    } else if ((c === '\r' || c === '\n') && !inQuotes) {
+      if (c === '\r' && next === '\n') {
+        i++;
+      }
+      rows.push(row);
+      row = [''];
+    } else {
+      row[row.length - 1] += c;
+    }
+  }
+  if (row.length > 1 || row[0] !== '') {
+    rows.push(row);
+  }
+  return rows;
+}
+
+// Imports an exported IMDb Watchlist (watchlist.csv)
+function importIMDbCSVFile(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    try {
+      const text = evt.target.result;
+      const rows = parseCSV(text);
+      if (!rows || rows.length < 2) {
+        alert("Valittu CSV-tiedosto on tyhjä tai siitä puuttuvat otsikot ja datarivit.");
+        e.target.value = "";
+        return;
+      }
+
+      const headers = rows[0].map(h => (h || "").trim().toLowerCase());
+      const constIdx = headers.findIndex(h => h === "const" || h.includes("imdb id") || h === "id");
+      const titleIdx = headers.findIndex(h => h === "title" || h === "otsikko");
+      const yearIdx = headers.findIndex(h => h === "year" || h === "vuosi");
+      const typeIdx = headers.findIndex(h => h === "title type" || h === "type" || h === "tyyppi");
+      const genresIdx = headers.findIndex(h => h === "genres" || h === "genre");
+      const yourRatingIdx = headers.findIndex(h => h === "your rating" || h === "oma arvio");
+      const imdbRatingIdx = headers.findIndex(h => h === "imdb rating" || h === "arvio");
+      const directorsIdx = headers.findIndex(h => h === "directors" || h === "director" || h === "ohjaaja");
+      const urlIdx = headers.findIndex(h => h === "url" || h === "linkki");
+      const descIdx = headers.findIndex(h => h === "description" || h === "kuvaus");
+
+      if (constIdx === -1 && titleIdx === -1) {
+        alert("Tiedosto ei vaikuta kelvolliselta IMDb Watchlist -tiedostolta (sarakkeita 'Const' tai 'Title' ei löytynyt).");
+        e.target.value = "";
+        return;
+      }
+
+      // Existing item lookup to prevent duplicates
+      const existingIds = new Set();
+      const existingKeys = new Set();
+      items.forEach(it => {
+        if (it.id && it.id.startsWith("tt")) existingIds.add(it.id);
+        if (it.link) {
+          const m = it.link.match(/tt\d+/);
+          if (m) existingIds.add(m[0]);
+        }
+        if (it.title) {
+          const cleanTitle = it.title.trim().toLowerCase();
+          const cleanYear = (it.year || "").toString().trim();
+          existingKeys.add(`${cleanTitle}_${cleanYear}`);
+          existingKeys.add(cleanTitle);
+        }
+      });
+
+      const newItems = [];
+      let dupCount = 0;
+
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row || row.length === 0 || (row.length === 1 && !row[0].trim())) continue;
+
+        const imdbId = constIdx >= 0 && row[constIdx] ? row[constIdx].trim() : "";
+        const rawTitle = titleIdx >= 0 && row[titleIdx] ? row[titleIdx].trim() : "";
+        if (!rawTitle && !imdbId) continue;
+
+        const yearRaw = yearIdx >= 0 && row[yearIdx] ? row[yearIdx].trim() : "";
+        const year = yearRaw.replace(/[^0-9]/g, "").substring(0, 4);
+
+        const cleanTitle = rawTitle.toLowerCase();
+        if ((imdbId && existingIds.has(imdbId)) ||
+            (cleanTitle && existingKeys.has(`${cleanTitle}_${year}`)) ||
+            (cleanTitle && !year && existingKeys.has(cleanTitle))) {
+          dupCount++;
+          continue;
+        }
+
+        const rawType = typeIdx >= 0 && row[typeIdx] ? row[typeIdx].trim().toLowerCase() : "";
+        const isSeries = rawType.includes("series") || rawType.includes("tvminiseries") || rawType.includes("show") || rawType.includes("sarja");
+        const type = isSeries ? "series" : "movie";
+
+        const rawGenres = genresIdx >= 0 && row[genresIdx] ? row[genresIdx].trim() : "";
+        const genres = rawGenres ? rawGenres.split(",").map(g => g.trim()).filter(Boolean) : [];
+
+        const rawYourRating = yourRatingIdx >= 0 && row[yourRatingIdx] ? parseFloat(row[yourRatingIdx]) : NaN;
+        const director = directorsIdx >= 0 && row[directorsIdx] ? row[directorsIdx].trim() : "";
+        const url = urlIdx >= 0 && row[urlIdx] ? row[urlIdx].trim() : (imdbId ? `https://www.imdb.com/title/${imdbId}/` : "");
+        const desc = descIdx >= 0 && row[descIdx] ? row[descIdx].trim() : "";
+
+        const isCompleted = !isNaN(rawYourRating) && rawYourRating > 0;
+        const status = isCompleted ? "completed" : "watchlist";
+        const rating = isCompleted ? Math.min(5, Math.max(1, Math.round(rawYourRating / 2))) : null;
+
+        let notes = "";
+        if (desc) notes = desc;
+        if (isCompleted && !isNaN(rawYourRating)) {
+          notes = notes ? `${notes} (IMDb-arvio: ${rawYourRating}/10)` : `IMDb-arvio: ${rawYourRating}/10`;
+        }
+
+        const newItem = {
+          id: imdbId || `item_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+          title: rawTitle || imdbId,
+          year: year || "",
+          type: type,
+          platform: "",
+          status: status,
+          rating: rating,
+          posterUrl: "",
+          genres: genres,
+          cast: "",
+          creator: director,
+          synopsis: "",
+          link: url,
+          notes: notes,
+          dateAdded: new Date().toISOString().split("T")[0]
+        };
+
+        newItems.push(newItem);
+        if (imdbId) existingIds.add(imdbId);
+        if (cleanTitle) {
+          existingKeys.add(`${cleanTitle}_${year}`);
+          existingKeys.add(cleanTitle);
+        }
+      }
+
+      e.target.value = "";
+
+      if (newItems.length === 0) {
+        alert(`Ei uusia nimikkeitä tuotavaksi (${dupCount} nimikettä oli jo katselulistallasi).`);
+        return;
+      }
+
+      items = newItems.concat(items);
+      saveData();
+      closeModals();
+      showToast(`✅ Tuotu ${newItems.length} nimikettä IMDb:stä! (${dupCount} ohitettiin duplikaattina)`);
+
+      // Enrich missing posters and synopsis in background
+      enrichImportedItems(newItems);
+    } catch (err) {
+      alert("Virhe IMDb CSV -tiedoston käsittelyssä: " + err.message);
+      e.target.value = "";
+    }
+  };
+  reader.readAsText(file);
+}
+
+// Background enricher for imported IMDb items
+async function enrichImportedItems(newItems) {
+  const toEnrich = newItems.filter(it => !it.posterUrl || !it.synopsis);
+  if (!toEnrich || toEnrich.length === 0) return;
+
+  let enrichedCount = 0;
+  for (const item of toEnrich) {
+    const imdbMatch = (item.id && item.id.startsWith("tt")) ? item.id : (item.link ? item.link.match(/tt\d+/) : null);
+    const imdbId = Array.isArray(imdbMatch) ? imdbMatch[0] : imdbMatch;
+
+    if (imdbId) {
+      try {
+        const res = await fetch(`https://www.omdbapi.com/?i=${imdbId}&apikey=trilogy`);
+        const d = await res.json();
+        if (d && d.Response === "True") {
+          let updated = false;
+          if (!item.posterUrl && d.Poster && d.Poster !== "N/A") {
+            item.posterUrl = d.Poster;
+            updated = true;
+          }
+          if (!item.synopsis && d.Plot && d.Plot !== "N/A") {
+            item.synopsis = d.Plot;
+            updated = true;
+          }
+          if (!item.cast && d.Actors && d.Actors !== "N/A") {
+            item.cast = d.Actors;
+            updated = true;
+          }
+          if (!item.creator && d.Director && d.Director !== "N/A") {
+            item.creator = d.Director;
+            updated = true;
+          }
+          if ((!item.genres || item.genres.length === 0) && d.Genre && d.Genre !== "N/A") {
+            item.genres = d.Genre.split(",").map(s => s.trim()).filter(Boolean);
+            updated = true;
+          }
+          if (updated) {
+            enrichedCount++;
+            if (enrichedCount % 4 === 0) {
+              try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+                renderFilters();
+                renderView();
+              } catch (e) {}
+            }
+          }
+        }
+      } catch (e) {
+        // Continue politely
+      }
+      await new Promise(r => setTimeout(r, 220));
+    }
+  }
+
+  if (enrichedCount > 0) {
+    saveData();
+    showToast(`🎨 ${enrichedCount} nimikkeen kansikuva ja tiedot rikastettu!`);
+  }
+}
+
 function exportToObsidianMarkdown() {
   let md = "---\nname: Katselulista\ntags:\n  - katselulista\n  - leffat\n  - sarjat\nupdated: " + new Date().toISOString().split("T")[0] + "\n---\n\n";
   md += "# 🎬 Katselulista – Leffat & Sarjat\n\n";

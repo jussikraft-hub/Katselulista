@@ -60,5 +60,37 @@ class TestKatselulistaApp(unittest.TestCase):
         self.assertEqual(res.returncode, 0, f"server.py test failed: {res.stderr}")
         self.assertIn("OK", res.stdout)
 
+    def test_06_imdb_csv_importer(self):
+        html_path = os.path.join(SCRIPT_DIR, "index.html")
+        app_js = os.path.join(SCRIPT_DIR, "app.js")
+        with open(html_path, "r", encoding="utf-8") as f:
+            html = f.read()
+        with open(app_js, "r", encoding="utf-8") as f:
+            js = f.read()
+
+        self.assertIn("importIMDbCSVFile", html)
+        self.assertIn('id="imdbCsvInput"', html)
+        self.assertIn("function parseCSV", js)
+        self.assertIn("function importIMDbCSVFile", js)
+        self.assertIn("function enrichImportedItems", js)
+
+        # Test CSV parsing via node snippet
+        test_script = """
+        const fs = require('fs');
+        const code = fs.readFileSync('""" + app_js.replace("\\", "/") + """', 'utf8');
+        const parseMatch = code.match(/function parseCSV[\\s\\S]*?\\n}/);
+        if (!parseMatch) process.exit(1);
+        eval(parseMatch[0]);
+
+        const sample = 'Position,Const,Title,Year,Genres,Your Rating\\n1,tt0096933,"Black Rain",1989,"Action, Crime",8';
+        const res = parseCSV(sample);
+        if (res.length !== 2) process.exit(2);
+        if (res[1][1] !== 'tt0096933' || res[1][2] !== 'Black Rain' || res[1][4] !== 'Action, Crime') process.exit(3);
+        console.log('CSV_PARSER_OK');
+        """
+        res = subprocess.run(["node", "-e", test_script], capture_output=True, text=True)
+        self.assertEqual(res.returncode, 0, f"Node CSV parser test failed: {res.stderr}")
+        self.assertIn("CSV_PARSER_OK", res.stdout)
+
 if __name__ == "__main__":
     unittest.main()
