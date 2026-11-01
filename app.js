@@ -1,89 +1,7 @@
 /**
  * Katselulista – Mobile/iPad Web App Engine
  * Ominaisuudet: Lajittelu, tyyppisuodatus, haku, alustasuodatus, satunnaisvalinta, lista-/korttinäkymä
- * Lisäykset: Dynaamiset taustavärit puuttuville kansikuville, älykäs duplikaattien esto, 
- *            automaattinen Dropbox-synkka ja "Katson juuri nyt" pikatoiminto.
  */
-
-// Initial Seed Data (Curated items matching katselulista.json)
-const DEFAULT_ITEMS = [
-  {
-    id: "item-1793482229853",
-    title: "Breaking Bad",
-    originalTitle: "Breaking Bad",
-    type: "series",
-    year: "2008",
-    platform: "Netflix",
-    status: "completed",
-    progress: "Kaikki 5 kautta katsottu",
-    posterUrl: "https://static.tvmaze.com/uploads/images/original_untouched/501/1253519.jpg",
-    genres: ["Draama", "Rikos", "Trilleri"],
-    cast: "Bryan Cranston, Aaron Paul, Anna Gunn, Dean Norris, Giancarlo Esposito",
-    creator: "Vince Gilligan",
-    synopsis: "Kemianopettaja Walter White saa kuulla sairastavansa parantumatonta syöpää ja päättää ryhtyä valmistamaan metamfetamiinia taatakseen perheensä taloudellisen tulevaisuuden.",
-    notes: "Mestariteos. Täydellinen draaman kaari.",
-    rating: 5,
-    link: "http://www.amc.com/shows/breaking-bad",
-    updatedAt: "2026-10-31"
-  },
-  {
-    id: "sugar-2024",
-    title: "Sugar",
-    originalTitle: "Sugar",
-    type: "series",
-    year: "2024",
-    platform: "Apple TV+",
-    status: "watching",
-    progress: "Kausi 1 kesken (8 jaksoa)",
-    posterUrl: "https://static.tvmaze.com/uploads/images/original_untouched/629/1574176.jpg",
-    genres: ["Neo-noir", "Rikos", "Mysteeri", "Draama"],
-    cast: "Colin Farrell, Amy Ryan, James Cromwell, Kirby Howell-Baptiste",
-    creator: "Mark Protosevich",
-    synopsis: "Los Angelesiin sijoittuva tyylikäs neo-noir-etsivätarina, jossa vanhan Hollywoodin elokuvaviittaukset yhdistyvät arvoitukselliseen katoamistapaukseen ja odottamattomaan mysteeriin.",
-    notes: "Colin Farrell pääosassa yksityisetsivä John Sugarina.",
-    rating: 4,
-    link: "https://tv.apple.com",
-    updatedAt: "2026-10-31"
-  },
-  {
-    id: "silo-2023",
-    title: "Siilo (Silo)",
-    originalTitle: "Silo",
-    type: "series",
-    year: "2023",
-    platform: "Apple TV+",
-    status: "watching",
-    progress: "Kausi 1 & 2",
-    posterUrl: "https://static.tvmaze.com/uploads/images/original_untouched/631/1577677.jpg",
-    genres: ["Scifi", "Dystopia", "Mysteeri", "Draama"],
-    cast: "Rebecca Ferguson, Tim Robbins, Common, Harriet Walter",
-    creator: "Graham Yost (Hugh Howeyn Wool-kirjat)",
-    synopsis: "Maanalaiseen 144-kerroksiseen siiloon eristäytynyt yhteisö. Kuka rakensi siilon, miksi ulkomaailma on tuhoutunut ja mitä salaisuuksia siilon säännöt piilottelevat?",
-    notes: "Hugh Howeyn kirjatrilogian upea sovitus.",
-    rating: 5,
-    link: "https://tv.apple.com",
-    updatedAt: "2026-10-31"
-  },
-  {
-    id: "fallout-2024",
-    title: "Fallout",
-    originalTitle: "Fallout",
-    type: "series",
-    year: "2024",
-    platform: "Prime Video",
-    status: "watching",
-    progress: "1. kausi katsottu (odottaa Kautta 2)",
-    posterUrl: "https://static.tvmaze.com/uploads/images/original_untouched/599/1499142.jpg",
-    genres: ["Scifi", "Post-apokalypsi", "Musta komedia", "Toiminta"],
-    cast: "Ella Purnell, Walton Goggins, Aaron Moten, Kyle MacLachlan",
-    creator: "Graham Wagner, Geneva Robertson-Dworet (Jonathan Nolan & Lisa Joy)",
-    synopsis: "Ydintuhon jälkeinen autiomaa ja Holvi 33. Yhteiskunnan luokkaerot, musta huumori ja armoton selviytymistaistelu kohtaavat kulttipelisarjan maailmassa.",
-    notes: "Kausi 1 katsottu. Jäänyt odottamaan 2. kautta (New Vegas).",
-    rating: 5,
-    link: "https://www.primevideo.com",
-    updatedAt: "2026-10-31"
-  }
-];
 
 // App State
 let items = [];
@@ -102,9 +20,9 @@ const DROPBOX_TOKEN_KEY = "katselulista_dropbox_token";
 const VIEW_PREF_KEY = "katselulista_view_pref";
 const SORT_PREF_KEY = "katselulista_sort_pref";
 
-// Elements
-const cardsGrid = document.getElementById("cardsGrid");
-const cardsList = document.getElementById("cardsList");
+// Elements (with ?. defensive programming checks in case HTML hasn't fully parsed)
+const cardsGrid = () => document.getElementById("cardsGrid");
+const cardsList = () => document.getElementById("cardsList");
 const searchInput = document.getElementById("searchInput");
 const searchClearBtn = document.getElementById("searchClearBtn");
 const tabButtons = document.querySelectorAll(".tab-btn");
@@ -125,8 +43,6 @@ function initApp() {
   loadPreferences();
   loadData();
   setupEventListeners();
-  renderFilters();
-  renderView();
 }
 
 function loadPreferences() {
@@ -141,25 +57,43 @@ function loadPreferences() {
   }
 }
 
-// Load data from localStorage
+// Load data from localStorage (or fallback to original JSON loading strategy)
 function loadData() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed)) {
         items = parsed;
-      } else {
-        items = [...DEFAULT_ITEMS];
-        saveData();
       }
+      renderFilters();
+      renderView();
     } else {
-      items = [...DEFAULT_ITEMS];
-      saveData();
+      // Jos muisti on täysin tyhjä, yritetään ladata alkuperäinen JSON palvelimelta
+      loadDefaultListFromJSON();
     }
   } catch (e) {
     console.error("Virhe ladattaessa muistista:", e);
-    items = [...DEFAULT_ITEMS];
+    items = [];
+    renderFilters();
+    renderView();
+  }
+}
+
+async function loadDefaultListFromJSON() {
+  try {
+    const res = await fetch("katselulista.json");
+    if (!res.ok) throw new Error("Ei tiedostoa");
+    const list = await res.json();
+    if (Array.isArray(list)) {
+      items = list;
+      saveData();
+    }
+  } catch (err) {
+    console.log("Ei paikallista katselulista.json -tiedostoa. Aloitetaan tyhjällä listalla.");
+    items = [];
+    renderFilters();
+    renderView();
   }
 }
 
@@ -200,10 +134,10 @@ function renderFilters() {
     completed: items.filter(i => i.status === "completed").length
   };
 
-  document.getElementById("countAll").textContent = counts.all;
-  document.getElementById("countWatching").textContent = counts.watching;
-  document.getElementById("countWatchlist").textContent = counts.watchlist;
-  document.getElementById("countCompleted").textContent = counts.completed;
+  if(document.getElementById("countAll")) document.getElementById("countAll").textContent = counts.all;
+  if(document.getElementById("countWatching")) document.getElementById("countWatching").textContent = counts.watching;
+  if(document.getElementById("countWatchlist")) document.getElementById("countWatchlist").textContent = counts.watchlist;
+  if(document.getElementById("countCompleted")) document.getElementById("countCompleted").textContent = counts.completed;
 
   if (headerCountSub) {
     headerCountSub.textContent = `${items.length} nimikettä listalla`;
@@ -289,16 +223,18 @@ function renderView() {
   const filtered = getFilteredAndSortedItems();
   const gridBtn = document.getElementById("viewGridBtn");
   const listBtn = document.getElementById("viewListBtn");
+  const gridEl = cardsGrid();
+  const listEl = cardsList();
 
   if (currentView === "list") {
-    cardsGrid.style.display = "none";
-    cardsList.style.display = "flex";
+    if (gridEl) gridEl.style.display = "none";
+    if (listEl) listEl.style.display = "flex";
     if (gridBtn) gridBtn.classList.remove("active");
     if (listBtn) listBtn.classList.add("active");
     renderCompactList(filtered);
   } else {
-    cardsGrid.style.display = "grid";
-    cardsList.style.display = "none";
+    if (gridEl) gridEl.style.display = "grid";
+    if (listEl) listEl.style.display = "none";
     if (gridBtn) gridBtn.classList.add("active");
     if (listBtn) listBtn.classList.remove("active");
     renderCards(filtered);
@@ -307,10 +243,12 @@ function renderView() {
 
 // Render cards (Grid View)
 function renderCards(filtered) {
-  cardsGrid.innerHTML = "";
+  const gridEl = cardsGrid();
+  if (!gridEl) return;
+  gridEl.innerHTML = "";
 
   if (filtered.length === 0) {
-    cardsGrid.innerHTML = `
+    gridEl.innerHTML = `
       <div style="grid-column: 1 / -1; text-align: center; padding: 48px 16px; color: var(--text-dim);">
         <div style="font-size: 36px; margin-bottom: 8px;">🍿</div>
         <div style="font-size: 16px; font-weight: 700; color: var(--text-muted);">Ei nimikkeitä valitulla suodatuksella</div>
@@ -364,17 +302,18 @@ function renderCards(filtered) {
         ${ratingStars ? `<div class="card-rating">${ratingStars}</div>` : ""}
       </div>
     `;
-
-    cardsGrid.appendChild(card);
+    gridEl.appendChild(card);
   });
 }
 
 // Render Compact List View
 function renderCompactList(filtered) {
-  cardsList.innerHTML = "";
+  const listEl = cardsList();
+  if (!listEl) return;
+  listEl.innerHTML = "";
 
   if (filtered.length === 0) {
-    cardsList.innerHTML = `
+    listEl.innerHTML = `
       <div style="text-align: center; padding: 48px 16px; color: var(--text-dim);">
         <div style="font-size: 36px; margin-bottom: 8px;">🍿</div>
         <div style="font-size: 16px; font-weight: 700; color: var(--text-muted);">Ei nimikkeitä valitulla suodatuksella</div>
@@ -422,8 +361,7 @@ function renderCompactList(filtered) {
         ${ratingStars ? `<div style="font-size: 10px; color: var(--gold);">${ratingStars}</div>` : ""}
       </div>
     `;
-
-    cardsList.appendChild(row);
+    listEl.appendChild(row);
   });
 }
 
@@ -447,6 +385,8 @@ function rollRandomItem() {
   currentRolledItem = picked;
 
   const contentBox = document.getElementById("randomCardContent");
+  if (!contentBox) return;
+
   const platformClass = getPlatformClass(picked.platform);
   const bgGradient = getTitleGradient(picked.title);
   let statusLabel = picked.status === "watching" ? "Kesken" : picked.status === "completed" ? "Katsottu" : "Listalla";
@@ -474,7 +414,7 @@ function rollRandomItem() {
     openDetailModal(picked.id);
   };
 
-  randomModal.classList.add("active");
+  if(randomModal) randomModal.classList.add("active");
 }
 
 function openDetailModal(id) {
@@ -495,7 +435,6 @@ function openDetailModal(id) {
   else if (item.status === "watchlist") statusBadge.textContent = "Listalla";
   else statusBadge.textContent = "Katsottu";
 
-  // Näytä iso "Katson juuri nyt" -nappi vain jos nimike on 'watchlist'
   const quickActionBox = document.getElementById("detailQuickActionBox");
   if (item.status === "watchlist") {
     quickActionBox.style.display = "block";
@@ -559,10 +498,9 @@ function openDetailModal(id) {
     linkBtn.style.display = "none";
   }
 
-  detailModal.classList.add("active");
+  if (detailModal) detailModal.classList.add("active");
 }
 
-// "Aloita katselu" pikatoiminto
 function setWatchingNow() {
   if (!activeItem) return;
   activeItem.status = "watching";
@@ -572,7 +510,6 @@ function setWatchingNow() {
   openDetailModal(activeItem.id);
 }
 
-// Cycle status
 function cycleActiveItemStatus() {
   if (!activeItem) return;
 
@@ -654,10 +591,10 @@ function saveFullItemEdits(e) {
 }
 
 function closeModals() {
-  detailModal.classList.remove("active");
-  addModal.classList.remove("active");
-  syncModal.classList.remove("active");
-  randomModal.classList.remove("active");
+  if (detailModal) detailModal.classList.remove("active");
+  if (addModal) addModal.classList.remove("active");
+  if (syncModal) syncModal.classList.remove("active");
+  if (randomModal) randomModal.classList.remove("active");
   activeItem = null;
 }
 
@@ -672,18 +609,22 @@ function deleteActiveItem() {
 }
 
 function setupEventListeners() {
-  searchInput.addEventListener("input", (e) => {
-    searchQuery = e.target.value;
-    searchClearBtn.style.display = searchQuery ? "block" : "none";
-    renderView();
-  });
+  if (searchInput) {
+    searchInput.addEventListener("input", (e) => {
+      searchQuery = e.target.value;
+      if (searchClearBtn) searchClearBtn.style.display = searchQuery ? "block" : "none";
+      renderView();
+    });
+  }
 
-  searchClearBtn.addEventListener("click", () => {
-    searchInput.value = "";
-    searchQuery = "";
-    searchClearBtn.style.display = "none";
-    renderView();
-  });
+  if (searchClearBtn) {
+    searchClearBtn.addEventListener("click", () => {
+      if (searchInput) searchInput.value = "";
+      searchQuery = "";
+      searchClearBtn.style.display = "none";
+      renderView();
+    });
+  }
 
   if (sortSelect) {
     sortSelect.addEventListener("change", (e) => {
@@ -719,30 +660,35 @@ function setupEventListeners() {
   });
 
   [detailModal, addModal, syncModal, randomModal].forEach(m => {
-    m.addEventListener("click", (e) => {
-      if (e.target === m) closeModals();
-    });
+    if (m) {
+      m.addEventListener("click", (e) => {
+        if (e.target === m) closeModals();
+      });
+    }
   });
 
   const autoSearchInput = document.getElementById("autoSearchInput");
   const autoResultsList = document.getElementById("autoResultsList");
   let searchTimeout = null;
 
-  autoSearchInput.addEventListener("input", (e) => {
-    const q = e.target.value.trim();
-    clearTimeout(searchTimeout);
-    if (q.length < 2) {
-      autoResultsList.style.display = "none";
-      return;
-    }
-    searchTimeout = setTimeout(() => {
-      searchMoviesAndShows(q);
-    }, 350);
-  });
+  if (autoSearchInput) {
+    autoSearchInput.addEventListener("input", (e) => {
+      const q = e.target.value.trim();
+      clearTimeout(searchTimeout);
+      if (q.length < 2) {
+        if (autoResultsList) autoResultsList.style.display = "none";
+        return;
+      }
+      searchTimeout = setTimeout(() => {
+        searchMoviesAndShows(q);
+      }, 350);
+    });
+  }
 }
 
 async function searchMoviesAndShows(query) {
   const autoResultsList = document.getElementById("autoResultsList");
+  if (!autoResultsList) return;
   try {
     const omdbPromise = fetch(`https://www.omdbapi.com/?s=${encodeURIComponent(query)}&apikey=trilogy`)
       .then(r => r.json())
@@ -845,8 +791,9 @@ async function selectSearchResult(item) {
     selectTVMazeShow(item.raw);
   }
 
-  autoResultsList.style.display = "none";
-  document.getElementById("autoSearchInput").value = "";
+  if (autoResultsList) autoResultsList.style.display = "none";
+  const autoSearchInput = document.getElementById("autoSearchInput");
+  if (autoSearchInput) autoSearchInput.value = "";
   showToast(`Valittu: ${item.title}`);
 }
 
@@ -909,24 +856,30 @@ function submitAddItem(e) {
   items.unshift(newItem);
   saveData(); // < Tämä tallentaa ja synkronoi automaattisesti nyt Dropboxiin
   closeModals();
-  document.getElementById("addItemForm").reset();
+  const form = document.getElementById("addItemForm");
+  if (form) form.reset();
   showToast(`Lisätty: ${newItem.title}`);
 }
 
 function openAddModal() {
-  document.getElementById("addItemForm").reset();
-  document.getElementById("autoResultsList").style.display = "none";
-  addModal.classList.add("active");
+  const form = document.getElementById("addItemForm");
+  if (form) form.reset();
+  const autoResultsList = document.getElementById("autoResultsList");
+  if (autoResultsList) autoResultsList.style.display = "none";
+  if (addModal) addModal.classList.add("active");
 }
 
 function openSyncModal() {
   const token = localStorage.getItem(DROPBOX_TOKEN_KEY) || "";
-  document.getElementById("dropboxTokenInput").value = token;
-  syncModal.classList.add("active");
+  const tokenInput = document.getElementById("dropboxTokenInput");
+  if (tokenInput) tokenInput.value = token;
+  if (syncModal) syncModal.classList.add("active");
 }
 
 function saveDropboxToken() {
-  const token = document.getElementById("dropboxTokenInput").value.trim();
+  const tokenInput = document.getElementById("dropboxTokenInput");
+  if (!tokenInput) return;
+  const token = tokenInput.value.trim();
   localStorage.setItem(DROPBOX_TOKEN_KEY, token);
   showToast("Dropbox-avain tallennettu!");
   uploadToDropbox(true); // Koitetaan heti taustalla synkronoida
@@ -934,7 +887,8 @@ function saveDropboxToken() {
 
 // Upload to Dropbox API (silent = ei häiritseviä ilmoituksia taustasynkronoitaessa)
 async function uploadToDropbox(silent = false) {
-  const token = localStorage.getItem(DROPBOX_TOKEN_KEY) || (document.getElementById("dropboxTokenInput") ? document.getElementById("dropboxTokenInput").value.trim() : "");
+  const tokenInput = document.getElementById("dropboxTokenInput");
+  const token = localStorage.getItem(DROPBOX_TOKEN_KEY) || (tokenInput ? tokenInput.value.trim() : "");
   
   if (!token) {
     if (!silent) alert("Syötä ensin Dropbox Access Token asetuksissa!");
@@ -975,7 +929,9 @@ async function uploadToDropbox(silent = false) {
 }
 
 async function downloadFromDropbox() {
-  const token = localStorage.getItem(DROPBOX_TOKEN_KEY) || document.getElementById("dropboxTokenInput").value.trim();
+  const tokenInput = document.getElementById("dropboxTokenInput");
+  const token = localStorage.getItem(DROPBOX_TOKEN_KEY) || (tokenInput ? tokenInput.value.trim() : "");
+  
   if (!token) {
     alert("Syötä ensin Dropbox Access Token!");
     return;
@@ -1098,6 +1054,7 @@ async function syncWithLocalServer() {
 }
 
 function showToast(text) {
+  if (!toast) return;
   toast.textContent = text;
   toast.classList.add("show");
   setTimeout(() => {
